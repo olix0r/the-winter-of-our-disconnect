@@ -1,0 +1,77 @@
+#
+# slow_cooker
+#
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: client
+  labels:
+    app: client
+    buoyant.io/test: winter
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: client
+        buoyant.io/test: winter
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      containers:
+      - image: buoyantio/slow_cooker:1.2.0
+        name: main
+        command:
+        - "/bin/sh"
+        args:
+        - "-c"
+        - |
+          slow_cooker \
+            -qps 10 \
+            -concurrency 10 \
+            -interval 30s \
+            -metric-addr 0.0.0.0:9990 \
+            http://target:3000
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: server
+  labels:
+    app: server
+    buoyant.io/test: winter
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: server
+        buoyant.io/test: winter
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      containers:
+      - image: olix0r/the-winter-of-our-disconnect:v1
+        name: main
+        env:
+        - name: RUST_LOG
+          value: the_winter_of_our_disconnect=info
+        args:
+        - --port=3000
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: target
+  labels:
+    app: server
+    buoyant.io/test: winter
+spec:
+  selector:
+    app: server
+    buoyant.io/test: winter
+  ports:
+  - port: 3000
