@@ -51,7 +51,7 @@ impl Future for Serve {
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         use tokio::io::AsyncRead;
 
-        let mut buf = [0u8; 1024];
+        let mut buf = [0u8; 1];
         let sz = try_ready!(self
             .0
             .as_mut()
